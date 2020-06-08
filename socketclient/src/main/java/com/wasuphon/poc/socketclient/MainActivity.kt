@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity() {
                                         "Guardian total size: ${responseData.getInt(it)}"
                                     )
                                 }
-                                responseForShow += "\n Guardian battery: ${responseData.getInt(it)}"
+                                responseForShow += "\n Guardian $it: ${responseData.getInt(it)}"
                             }
                             runOnUiThread {
                                 responseTV.text = responseForShow
