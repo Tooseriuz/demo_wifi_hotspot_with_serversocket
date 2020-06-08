@@ -22,7 +22,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        sendData()
 
         prefBtn.setOnClickListener {
             val prefsData = JSONObject()
@@ -33,24 +32,21 @@ class MainActivity : AppCompatActivity() {
             prefsData.put("prefs_name4", "true")
             prefsData.put("prefs_name5", "true")
 
-            stream.writeUTF(prefsData.toString())
-            stream.flush()
+            sendData(prefsData)
         }
 
         rebootBtn.setOnClickListener {
             val controlData = JSONObject()
             controlData.put("command", "reboot")
 
-            stream.writeUTF(controlData.toString())
-            stream.flush()
+            sendData(controlData)
         }
 
         diagnosticBtn.setOnClickListener {
             val diagnosticData = JSONObject()
             diagnosticData.put("command", "diagnostic")
 
-            stream.writeUTF(diagnosticData.toString())
-            stream.flush()
+            sendData(diagnosticData)
         }
     }
 
@@ -62,12 +58,15 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    private fun sendData() {
+    private fun sendData(dataForSend: JSONObject) {
         serverThread = Thread(Runnable {
-            socket = Socket("192.168.43.1", 9080)
+            socket = Socket("192.168.1.83", 9090)
 
             while (true) {
                 stream = DataOutputStream(socket.getOutputStream())
+
+                stream.writeUTF(dataForSend.toString())
+                stream.flush()
 
                 //receiving data
                 val data = DataInputStream(socket.getInputStream()).readUTF()
@@ -85,7 +84,9 @@ class MainActivity : AppCompatActivity() {
                                 "ClientSocket",
                                 "Response from server: ${receiveJson.get("response")}"
                             )
-                            responseTV.text = receiveJson.get("response").toString()
+                            runOnUiThread{
+                                responseTV.text = receiveJson.get("response").toString()
+                            }
                         }
                         "diagnostic" -> {
                             val responseData = JSONObject(receiveJson.get("diagnostic").toString())
@@ -107,7 +108,9 @@ class MainActivity : AppCompatActivity() {
                                 }
                                 responseForShow += "\n Guardian battery: ${responseData.getInt(it)}"
                             }
-                            responseTV.text = responseForShow
+                            runOnUiThread {
+                                responseTV.text = responseForShow
+                            }
                         }
                     }
                 }

@@ -7,6 +7,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 
@@ -26,20 +27,21 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
-        startServer()
     }
 
     override fun onPause() {
         super.onPause()
         serverSocket.close()
         socket.close()
+        stream.close()
         clientThread.interrupt()
     }
 
     private fun startServer() {
         clientThread = Thread(Runnable {
-            serverSocket = ServerSocket(9000)
+            serverSocket = ServerSocket()
+            serverSocket.reuseAddress = true
+            serverSocket.bind(InetSocketAddress(9090))
 
             while (true) {
                 socket = serverSocket.accept()
@@ -77,8 +79,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-                stream.close()
-
             }
         })
 
