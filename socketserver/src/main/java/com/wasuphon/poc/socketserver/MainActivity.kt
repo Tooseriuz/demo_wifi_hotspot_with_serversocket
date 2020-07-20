@@ -21,10 +21,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var socket: Socket
     private lateinit var stream: DataInputStream
     private lateinit var clientThread: Thread
+    private lateinit var recorder: Recorder
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        recorder = Recorder()
+        recorder.record()
 
         startServer()
     }
@@ -35,6 +39,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        recorder.stop()
         serverSocket.close()
         socket.close()
         stream.close()
@@ -42,33 +47,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startServer() {
-        val sampleRate = 44100
-        val channelConfig: Int = AudioFormat.CHANNEL_CONFIGURATION_MONO
-        val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT
-        val minBufSize = AudioRecord.getMinBufferSize(
-            sampleRate, channelConfig,
-            audioFormat
-        )
-        val recorder = AudioRecord(
-            AudioSource.DEFAULT,
-            sampleRate, channelConfig, audioFormat,
-            minBufSize
-        )
         clientThread = Thread(Runnable {
             serverSocket = ServerSocket()
             serverSocket.reuseAddress = true
             serverSocket.bind(InetSocketAddress(9090))
-            val buffer = ByteArray(minBufSize)
 
             while (true) {
                 socket = serverSocket.accept()
 
-                recorder.startRecording()
                 while (true) {
-                    val readSize = recorder.read(buffer, 0, minBufSize);
+                    val audioPair = recorder.getAudioByte()
                     try {
-                        socket.getOutputStream().write(buffer, 0, readSize);
-
+                        socket.getOutputStream().write(audioPair.first, 0, audioPair.second);
                     }
                     catch (e: Exception) { }
                 }
